@@ -1,0 +1,27 @@
+{
+    "name": "blake/pdf-metadata-blanker",
+    "description": "A PHP script that monitors a folder for PDF files and removes their metadata",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Blake Howe",
+            "email": "your-email@example.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "setasign/fpdi": "^2.3",
+        "tecnickcom/tcpdf": "^6.4",
+        "setasign/fpdf": "^1.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "PDFBlanker\\": "src/"
+        }
+    },
+    "scripts": {
+        "start": "php PDF-blanker.php",
+        "process-once": "php PDF-blanker.php --once"
+    }
+}
