@@ -1,12 +1,13 @@
-# PDF Metadata Blanker
+# PDF Title Remover
 
-A PHP script that monitors a folder for PDF files and automatically removes their metadata, including title, author, subject, keywords, creator, and producer information.
+A PHP script that monitors a folder for PDF files and automatically removes **only the title metadata** while preserving all other metadata (author, subject, keywords, creator, producer). Files are processed in place without moving or creating separate copies.
 
 ## Features
 
 - **Folder Monitoring**: Automatically processes new PDF files dropped into a watch folder
-- **Metadata Removal**: Completely removes all metadata from PDF files
-- **File Organization**: Moves processed files to a separate folder and saves clean versions
+- **Selective Metadata Removal**: Removes only the title metadata, preserving all other metadata
+- **Recursive Processing**: Processes PDF files in subdirectories as well
+- **In-Place Processing**: Files are processed directly without creating copies or moving files
 - **Logging**: Comprehensive logging of all operations
 - **Flexible Configuration**: Easy to customize folder paths and settings
 - **Two Modes**: Continuous monitoring or one-time batch processing
@@ -24,30 +25,33 @@ A PHP script that monitors a folder for PDF files and automatically removes thei
    composer install
    ```
 
-3. **The script will automatically create these folders**:
-   - `input_pdfs/` - Drop PDF files here
-
+3. **The script will automatically create the input folder**:
+   - `input_pdfs/` - Drop PDF files here (including subdirectories)
 
 ## Usage
 
 ### Continuous Monitoring Mode
+
 Start the script to continuously monitor the input folder:
 ```bash
 php PDF-blanker.php
 ```
 
 The script will:
-- Process any existing PDF files in the input folder
+- Process any existing PDF files in the input folder and subdirectories
 - Continue running and check for new files every 5 seconds
 - Automatically process new PDFs as they're added
+- Process files in place (no file moving or copying)
 
 ### One-Time Processing Mode
+
 Process existing files once and exit:
 ```bash
 php PDF-blanker.php --once
 ```
 
 ### Using Composer Scripts
+
 ```bash
 # Start continuous monitoring
 composer run start
@@ -58,20 +62,21 @@ composer run process-once
 
 ## How It Works
 
-1. **File Detection**: The script monitors the `input_pdfs/` folder for PDF files
-2. **Metadata Removal**: Uses FPDI and TCPDF libraries to create a clean copy without metadata
-3. **File Organization**: 
-   - Original file is moved to `input_pdfs/processed/`
-   - Clean version is saved to `output_pdfs/`
+1. **File Detection**: The script recursively monitors the `input_pdfs/` folder and all subdirectories for PDF files
+2. **Title Removal**: Uses FPDI and TCPDF libraries to create a new PDF with blank title metadata
+3. **In-Place Processing**: 
+   - Creates a temporary file during processing
+   - Replaces the original file with the processed version
+   - No files are moved or copied to other locations
 4. **Logging**: All operations are logged to `pdf_blanker.log`
 
 ## Configuration
 
 Edit `config.php` to customize:
-- Input and output folder paths
-- Check interval for monitoring
-- Supported file extensions
-- Metadata removal settings
+- Input folder path (`watch_folder`)
+- Check interval for monitoring (`check_interval`)
+- Supported file extensions (`supported_extensions`)
+- PDF processing settings including metadata preservation options
 
 ## Folder Structure
 
@@ -82,9 +87,9 @@ project-folder/
 ├── composer.json            # Dependencies
 ├── README.md               # This file
 ├── pdf_blanker.log         # Log file (created automatically)
-├── input_pdfs/             # Drop PDFs here
-│   └── processed/          # Original files moved here
-├── output_pdfs/            # Clean PDFs saved here
+├── input_pdfs/             # Drop PDFs here (processed in place)
+│   ├── subfolder1/         # Subdirectories are processed recursively
+│   └── subfolder2/
 └── vendor/                 # Composer dependencies
 ```
 
@@ -95,50 +100,75 @@ project-folder/
    php PDF-blanker.php
    ```
 
-2. **Drop a PDF file** into the `input_pdfs/` folder
+2. **Drop a PDF file** into the `input_pdfs/` folder (or any subfolder)
 
 3. **The script will**:
    - Detect the new file
-   - Remove all metadata
-   - Save the clean version to `output_pdfs/`
-   - Move the original to `input_pdfs/processed/`
+   - Remove only the title metadata
+   - Replace the original file with the processed version (in place)
    - Log all operations
 
-## Metadata Removed
+## Metadata Processing
 
-The script removes these PDF metadata fields:
-- Title
-- Author
-- Subject
-- Keywords
-- Creator
-- Producer
-- Creation date information
-- Modification date information
+The script **removes only these PDF metadata fields**:
+- **Title** ✅ (removed/blanked)
+
+The script **preserves these PDF metadata fields**:
+- **Author** ✅ (preserved)
+- **Subject** ✅ (preserved)
+- **Keywords** ✅ (preserved)
+- **Creator** ✅ (preserved)
+- **Producer** ✅ (preserved)
+- Creation and modification dates (preserved)
 
 ## Logging
 
 All operations are logged to `pdf_blanker.log` with timestamps:
-- File processing status
+- File processing status with relative paths
 - Errors and exceptions
 - Directory creation
-- File movements
+- Processing statistics
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Permission Errors**: Ensure PHP has read/write access to the script directory
+1. **Permission Errors**: Ensure PHP has read/write access to the script directory and PDF files
 2. **Missing Dependencies**: Run `composer install` to install required libraries
 3. **Memory Issues**: Large PDF files may require increasing PHP memory limit
+4. **File Lock Issues**: Ensure PDF files are not open in other applications during processing
 
 ### Log File
-Check `pdf_blanker.log` for detailed error messages and processing information.
+
+Check `pdf_blanker.log` for detailed error messages and processing information. The log shows relative paths for better readability.
 
 ## Dependencies
 
 - **FPDI**: For reading and importing existing PDF pages
-- **TCPDF**: For creating new PDF files without metadata
+- **TCPDF**: For creating new PDF files with modified metadata
+- **FPDF**: Base PDF library (dependency of FPDI)
+
+## Configuration Options
+
+The `config.php` file allows you to customize:
+
+```php
+return [
+    'watch_folder' => __DIR__ . '/input_pdfs',    // Folder to monitor
+    'check_interval' => 5,                         // Check frequency (seconds)
+    'supported_extensions' => ['pdf'],             // File types to process
+    'pdf_settings' => [
+        'remove_title_only' => true,               // Only remove title
+        'preserve_metadata' => [                   // Keep other metadata
+            'author' => true,
+            'subject' => true,
+            'keywords' => true,
+            'creator' => true,
+            'producer' => true
+        ]
+    ]
+];
+```
 
 ## License
 
@@ -147,3 +177,8 @@ MIT License - Feel free to use and modify as needed.
 ## Support
 
 For issues or questions, check the log file first for error details. The script provides comprehensive logging to help diagnose any problems.
+
+## Version History
+
+- **v1.1**: Current version - Title-only removal with metadata preservation
+- **v1.0**: Initial release
